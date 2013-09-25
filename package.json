@@ -1,0 +1,26 @@
+{
+  "name": "fakeImage",
+  "version": "0.0.1",
+  "description": "fake image generator",
+  "main": "index.js",
+  "dependencies": {
+    "gm": "~1.13.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mervynwang/node_fake_image_generator.git"
+  },
+  "keywords": [
+    "fake",
+    "image",
+    ""
+  ],
+  "author": "mervyn wang",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "gitHead": "c2aa95671f8ac9d2019686beeb2a64917ae5fe04"
+}
