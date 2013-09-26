@@ -14,14 +14,11 @@ qs = require('querystring'),
 im = gm.subClass({ imageMagick: true });
 ;
 
-var debug 		= true,		//DEBUG MESG
+var debug 		= false,		//DEBUG MESG
 	HttpPort 	= 8000,		//HTTP port
     tmpDir		= './cache/';  
 
-
 var reg = ['_(size)(\\d+x\\d+)', '_(bg)([0-9a-f]{3,6})', '_tp'];
-
-
 
 /**
  * 回應 http 200  & img
@@ -52,13 +49,20 @@ function createImage(ip, rep){
 			readImg(imagePN, rep);
 		} else {
 			var center = Math.ceil(ip.width/2), top = Math.ceil(ip.height/2)
-			, fontsize= Math.ceil(ip.width/8)
-			, font = ip.width + 'x' + ip.height;
-			center = center - fontsize/5 * font.length;
-			console.log(center);
-			//Math.ceil(ip.width/6)
+			, font = ip.width + 'x' + ip.height
+			, min = (ip.width < ip.height)? ip.width: ip.height 
+			, fontsize = Math.ceil(min/3);
 
-			console.log('create new image');
+			center = center - (fontsize/2 * font.length)/2;
+			top = top + (fontsize/4);
+
+			if(debug){
+				console.log("fontsize: %s" ,fontsize);
+				console.log("center %s" ,center);
+				console.log("top %s" ,top);
+				console.log('create new image');
+			}
+
 			im(parseInt(ip.width), parseInt(ip.height), ip.bg).fontSize(fontsize)
 			.drawText(center, top, font)
 			.write(imagePN, function(err){
@@ -76,8 +80,8 @@ function processParam(i, n, ip){
 		case 'size':
 			var size = n.split('x');
 			console.log(size);
-			if(!isNaN(size[0])) ip.width = size[0];
-			if(!isNaN(size[1])) ip.height = size[1];
+			if(!isNaN(size[0])) ip.width = parseInt(size[0]);
+			if(!isNaN(size[1])) ip.height = parseInt(size[1]);
 			break;
 
 		case 'bg':
@@ -97,7 +101,7 @@ function processParam(i, n, ip){
 server.createServer(function (request, response) {
 
 	var params = {"uri":'', "file":'', "query":''},
-	imageParams = {"width":100, "height":100, "bg": 'F0F0F0', "transparent": false};
+	imageParams = {"width":100, "height":100, "bg": '#F0F0F0', "transparent": false};
 	params.uri = url.parse(request.url);
 	params.file = path.basename(params.uri.pathname);
 	params.query = qs.parse(params.uri.query);
@@ -118,16 +122,6 @@ server.createServer(function (request, response) {
 		console.dir(imageParams);
 	}
 
-
-
-
-
-	//var fn = params.file.toLowerCase();
-	//fn.search(/_(size\d+x\d+)/)
-	//xxxx_size600x100_bgFFFFFF_tp
-
 	createImage(imageParams, response);	
-	
-	//response.end('');
 
 }).listen(HttpPort);
