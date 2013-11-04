@@ -80,7 +80,9 @@ function processParam(i, n, ip){
 	switch(i){
 		case 'size':
 			var size = n.split('x');
-			console.log(size);
+			if(debug) {
+                console.log(size);
+            }
 			if(!isNaN(size[0])) ip.width = parseInt(size[0]);
 			if(!isNaN(size[1])) ip.height = parseInt(size[1]);
 			break;
@@ -108,7 +110,7 @@ server.createServer(function (request, response) {
     params.ext = path.extname(params.uri.pathname).replace(/./, '');
 	params.query = qs.parse(params.uri.query);
     
-    if( extName.indexOf(params.ext) !== -1 ) {
+    if( extName.indexOf(params.ext) == -1 ) {
         response.writeHead(404);
         return true;
     }
