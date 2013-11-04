@@ -15,7 +15,8 @@ im = gm.subClass({ imageMagick: true });
 ;
 
 var debug 		= false,		//DEBUG MESG
-    extName     = '|jpg|jpeg|png|gif|',
+	newImage	= false,		// alway create new image
+    extName     = '|jpg|jpeg|png|gif|ico|',
 	HttpPort 	= 8000,		//HTTP port
     tmpDir		= './cache/';  
 
@@ -36,42 +37,51 @@ function r200(rep){
 	}
 }
 
-function readImg(fn, rep, type){
+function sendImage(fn, rep, type){
     var fileStream = fs.createReadStream(fn);
     rep.writeHead(200, { 'Content-Type': 'image/'+type});
     fileStream.pipe(rep);		
 }
 
-function createImage(ip, rep){
+function loadImage(ip, rep){
 	var imagePN = tmpDir + ip.width + 'x' + ip.height + ip.bg + '.' + ip.type;
 	fs.exists(imagePN, function(exists){
-		console.log("exists :: " + exists);
-		if(exists) {
-			readImg(imagePN, rep, ip.type);
-		} else {
-			var center = Math.ceil(ip.width/2), top = Math.ceil(ip.height/2)
+
+		if(debug){
+			console.log( imagePN + "exists :: " + exists);
+		}
+
+		if(!exists || newImage) {
+
+			var center = top = 0
 			, font = ip.width + 'x' + ip.height
 			, min = (ip.width < ip.height)? ip.width: ip.height 
-			, fontsize = Math.ceil(min/3);
-
-			center = center - (fontsize/2 * font.length)/2;
-			top = top + (fontsize/4);
+			, isWide  = (ip.width > ip.height)? true : false
+			, fontsize = isWide? Math.ceil(min/3) : Math.ceil(min/4)  ;
 
 			if(debug){
+				console.log("isWide : %s", isWide);
 				console.log("fontsize: %s" ,fontsize);
 				console.log("center %s" ,center);
 				console.log("top %s" ,top);
 				console.log('create new image');
 			}
 
-			im(parseInt(ip.width), parseInt(ip.height), ip.bg).fontSize(fontsize)
+			im(parseInt(ip.width), parseInt(ip.height), ip.bg)
+			.pointSize(fontsize)
+			.gravity('Center')
 			.drawText(center, top, font)
 			.write(imagePN, function(err){
-				if(err){
+				if(err && debug){
 					console.log(err);
 				}
-				readImg(imagePN, rep, ip.type);	
+				sendImage(imagePN, rep, ip.type);	
 			});
+
+		} else {
+
+			sendImage(imagePN, rep, ip.type);
+
 		}
 	});
 }
@@ -126,12 +136,14 @@ server.createServer(function (request, response) {
 	}
 
 	if(debug) {
+		console.log("\n\n");
 		console.log("====== params ========");
 		console.dir(params);
 		console.log("====== file ========");
 		console.dir(imageParams);
+		console.log("====== run ========");
 	}
 
-	createImage(imageParams, response);	
+	loadImage(imageParams, response);	
 
 }).listen(HttpPort);
