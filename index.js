@@ -15,6 +15,7 @@ im = gm.subClass({ imageMagick: true });
 ;
 
 var debug 		= false,		//DEBUG MESG
+    extName     = '|jpg|jpeg|png|gif|',
 	HttpPort 	= 8000,		//HTTP port
     tmpDir		= './cache/';  
 
@@ -35,18 +36,18 @@ function r200(rep){
 	}
 }
 
-function readImg(fn, rep){
+function readImg(fn, rep, type){
     var fileStream = fs.createReadStream(fn);
-    rep.writeHead(200, { 'Content-Type': 'image/jpeg'});
+    rep.writeHead(200, { 'Content-Type': 'image/'+type});
     fileStream.pipe(rep);		
 }
 
 function createImage(ip, rep){
-	var imagePN = tmpDir + ip.width + 'x' + ip.height + ip.bg + '.jpg';
+	var imagePN = tmpDir + ip.width + 'x' + ip.height + ip.bg + '.' + ip.type;
 	fs.exists(imagePN, function(exists){
 		console.log("exists :: " + exists);
 		if(exists) {
-			readImg(imagePN, rep);
+			readImg(imagePN, rep, ip.type);
 		} else {
 			var center = Math.ceil(ip.width/2), top = Math.ceil(ip.height/2)
 			, font = ip.width + 'x' + ip.height
@@ -69,7 +70,7 @@ function createImage(ip, rep){
 				if(err){
 					console.log(err);
 				}
-				readImg(imagePN, rep);	
+				readImg(imagePN, rep, ip.type);	
 			});
 		}
 	});
@@ -101,11 +102,18 @@ function processParam(i, n, ip){
 server.createServer(function (request, response) {
 
 	var params = {"uri":'', "file":'', "query":''},
-	imageParams = {"width":100, "height":100, "bg": '#F0F0F0', "transparent": false};
+	imageParams = {"width":100, "height":100, "bg": '#F0F0F0', "transparent": false, "type" : "png"};
 	params.uri = url.parse(request.url);
 	params.file = path.basename(params.uri.pathname);
+    params.ext = path.extname(params.uri.pathname).replace(/./, '');
 	params.query = qs.parse(params.uri.query);
-
+    
+    if( extName.indexOf(params.ext) !== -1 ) {
+        response.writeHead(404);
+        return true;
+    }
+    imageParams.type = params.ext;
+    
 	if( params.file == 'favicon.ico') {
 		r200(response);
 		return true;
